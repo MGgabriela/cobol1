@@ -1,506 +1,559 @@
-      *                                                                *
-      *PROJETO: GPAZ9907                                               *
-      *CLIENTE: BOX COMPANY DO BRASIL                                  *
+      *PROJETO: GPAZ9906                                               *
+      *CLIENTE: PARAGUAY EXPRESS                                       *
       *                                                                *
       *----------------------------------------------------------------*
-      *OBJETIVO:
-      *
-      *
+      *OBJETIVO:                                                       *
+      *                                                                *
+      *                                                                *
       *----------------------------------------------------------------*
        IDENTIFICATION                      DIVISION.
       *----------------------------------------------------------------*
-       PROGRAM-ID.                         GPAZ9907.
-       AUTHOR.                             GABRIELA.
-       DATE-WRITTEN.                       09/06/2021.
-       DATE-COMPILED.                      09/06/2021.
-       SECURITY.                           NENHUMA.
-
+       PROGRAM-ID.                         GPAZ9906.
+       AUTHOR.                             GABI.
+       DATE-WRITTEN.                       07/06/2021.
+       DATE-COMPILED.                      08/06/2021.
+       SECURITY.                           NENHUM.
       *----------------------------------------------------------------*
        ENVIRONMENT                         DIVISION.
       *----------------------------------------------------------------*
        CONFIGURATION                       SECTION.
-       SOURCE-COMPUTER.                    PC.
-       OBJECT-COMPUTER.                    PC.
+       SOURCE-COMPUTER.                    PC-GABI.
+       OBJECT-COMPUTER.                    PC-GABI.
        SPECIAL-NAMES.
            DECIMAL-POINT IS COMMA.
 
+      *----------------------------------------------------------------*
        INPUT-OUTPUT                        SECTION.
       *----------------------------------------------------------------*
-      *ETAPA 1: ESPECIFICACAO DO ARQUIVOS DE ENTRADA E SAIDA
+      *ETAPA 1: ESPECIFICACAO DOS ARQ DE ENTRADA E SAIDA
        FILE-CONTROL.
-           SELECT MOVEST ASSIGN            TO UT-S-MOVEST
-           FILE STATUS IS FS-MOVEST
+           SELECT CLIOLD ASSIGN            TO UT-S-CLIOLD
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS FS-CLIOLD
            .
-           SELECT RELMOV01 ASSIGN          TO UT-S-RELMOV01
-           FILE STATUS IS FS-RELMOV01
+
+           SELECT CLIMOV ASSIGN            TO UT-S-CLIMOV
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS FS-CLIMOV
            .
+
+           SELECT CLINEW ASSIGN            TO UT-S-CLINEW
+           ORGANIZATION IS SEQUENTIAL
+           ACCESS MODE IS SEQUENTIAL
+           FILE STATUS IS FS-CLINEW
+           .
+
 
       *----------------------------------------------------------------*
        DATA                                DIVISION.
       *----------------------------------------------------------------*
        FILE                                SECTION.
-      *ETAPA 2: DETALHAMENTO DOS ARQUIVOS DE ENTRADA E SAIDA
+      *ETAPA 2: DETALHAMENTO DOS ARQ DE ENTRADA E SAIDA
 
-      *DECLARACAO DAS VARIAVEIS ORIGINAIS
-       FD  MOVEST
+       FD  CLIOLD
            LABEL RECORD STANDARD
            BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F
-           RECORD CONTAINS 35 CHARACTERS
-           DATA RECORD IS REG-MOVEST
+           RECORD CONTAINS 79 CHARACTERS
+           DATA RECORD IS REG-CLIOLD
            .
-           COPY ESTOQUE REPLACING ==:XX-:== BY ====.
-
-       FD  RELMOV01
-           LABEL RECORD OMITTED
+      *----VARIAVEIS ORIGINAIS DO ARQUIVO CLIOLD
+           COPY ARQCLI02 REPLACING ==:XX-:== BY ====
+                                 ==:YYY:== BY ==OLD==.
+       FD  CLIMOV
+           LABEL RECORD STANDARD
+           BLOCK CONTAINS 0 RECORDS
            RECORDING MODE IS F
            RECORD CONTAINS 80 CHARACTERS
-           DATA RECORD IS REG-RELMOV01
+           DATA RECORD IS REG-CLIMOV
            .
-       01  REG-RELMOV01                    PIC X(80).
+      *----VARIAVEIS ORIGINAIS DO ARQUIVO CLIMOV
+           COPY ARQCLI03 REPLACING ==:XX-:== BY ====
+                                 ==:YYY:== BY ==MOV==.
 
-
+       FD  CLINEW
+           LABEL RECORD STANDARD
+           BLOCK CONTAINS 0 RECORDS
+           RECORDING MODE IS F
+           RECORD CONTAINS 79 CHARACTERS
+           DATA RECORD IS REG-CLINEW
+           .
+      *----VARIAVEIS ORIGINAIS DO ARQUIVO CLINEW
+           COPY ARQCLI02 REPLACING ==:XX-:== BY ====
+                                 ==:YYY:== BY ==NEW==.
       *----------------------------------------------------------------*
        WORKING-STORAGE                     SECTION.
       *----------------------------------------------------------------*
-      *DECLARACAO DE VARIAVEIS ESPELHO
 
-      *VARIAVEIS DO WS-REG-MOVEST
-       COPY ESTOQUE REPLACING ==:XX-:== BY ==WS-==.
+      *VARIAVEIS ESPELHO DO CLIOLD
+       COPY ARQCLI02 REPLACING ==:XX-:== BY ==WS-==
+                               ==:YYY:== BY ==OLD==.
 
-      *VARIAVEIS DE DATA
+      *VARIAVEIS ESPELHO DO CLIMOV
+       COPY ARQCLI03 REPLACING ==:XX-:== BY ==WS-==
+                               ==:YYY:== BY ==MOV==.
+      *FLAGS DA VARIAVEL TIPOMOV(TIPO DE MOVIMENTACAO)
+                 88 INCLUIR                        VALUE "I".
+                 88 ALTERAR                        VALUE "A".
+                 88 EXCLUIR                        VALUE "E".
+
+      *VARIAVEIS DO CLIMOV FORMATADAS
+       01  WS-REG-CLI-MOV-F.
+              05 WS-CODCLI-M-F             PIC X(04).
+              05 WS-NOMECLI-M-F            PIC X(25).
+              05 WS-ENDCLI-M-F             PIC X(30).
+              05 WS-FONECLI-M-F.
+                    10 FILLER              PIC X(01)
+                                                   VALUE "(".
+                    10 WS-FONECLI1-M-F     PIC X(02).
+                    10 FILLER              PIC X(01)
+                                                   VALUE ")".
+                    10 WS-FONECLI2-M-F     PIC X(04).
+                    10 FILLER              PIC X(01)
+                                                   VALUE "-".
+                    10 WS-FONECLI3-M-F     PIC X(04).
+              05 WS-TOTALDIVIDA-M-F        PIC ZZ.ZZZ.ZZ9,99.
+
+
+      *VARIAVEIS ESPELHO DO CLINEW
+       COPY ARQCLI02 REPLACING ==:XX-:== BY ==WS-==
+                               ==:YYY:== BY ==NEW==.
+
+      *VARIAVEIS DE TEMPO DE PROCESSAMENTO
        COPY VARTEMP.
-
       *VARIAVEIS DE DATA
        COPY VARDATA.
 
-      *DATA DO CABECALHO
-       01  WS-DATA-CABEC.
-            05 WS-ANO-C                    PIC 9(02).
-            05 WS-MES-C                    PIC 9(02).
-            05 WS-DIA-C                    PIC 9(02).
-
-      *DATA DO CABECALHO FORMATADA
-       01  WS-DATA-CABEC-F.
-            05 WS-DIA-C-F                  PIC 9(02).
-            05 FILLER                      PIC X(01) VALUE '/'.
-            05 WS-MES-C-F                  PIC 9(02).
-            05 FILLER                      PIC X(03) VALUE '/20'.
-            05 WS-ANO-C-F                  PIC 9(02).
-
-      *HORA DO CABECALHO
-       01  WS-HORA-CABEC.
-              05 WS-HORA-C                 PIC 9(02).
-              05 WS-MIN-C                  PIC 9(02).
-              05 WS-SEG-C                  PIC 9(02).
-
-      *HORA FORMATADA DO CABECALHO
-       01  WS-HORA-CABEC-F.
-              05 WS-HORA-C-F               PIC 9(02).
-              05 FILLER                    PIC X(01) VALUE ':'.
-              05 WS-MIN-C-F                PIC 9(02).
-              05 FILLER                    PIC X(01) VALUE ':'.
-              05 WS-SEG-C-F                PIC 9(02).
-
-      *LAYOUT DO RELATORIO
-       01  WS-CABEC1.
-           05 WS-DATA-CABEC1              PIC X(10).
-           05 FILLER                      PIC X(17)
-                                                  VALUE SPACES.
-           05 FILLER                      PIC X(27)
-                                                  VALUE
-              "** BOX COMPANY DO BRASIL **".
-           05 FILLER                      PIC X(18)
-                                                  VALUE SPACES.
-           05 WS-HORA-CABEC1              PIC X(08).
-
-
-       01  WS-CABEC2.
-           05 FILLER                       PIC X(36)
-                                                   VALUE
-              "RELATORIO DE MOVIMENTO DE ESTOQUE".
-           05 FILLER                       PIC X(34)
-                                                   VALUE SPACES.
-           05 FILLER                       PIC X(05)
-                                                   VALUE
-                                                  "PAG. ".
-           05 WS-PAG-CABEC2                PIC Z.ZZ9.
-       01  WS-CABEC3                       PIC X(80)
-                                                   VALUE ALL "-".
-       01  WS-CABEC4.
-           05 FILLER                       PIC X(09)
-                                                   VALUE SPACES.
-           05 FILLER                       PIC X(14)
-                                                   VALUE "NUMERO".
-           05 FILLER                       PIC X(14)
-                                                   VALUE "DATA".
-           05 FILLER                       PIC X(12)
-                                                   VALUE "HORA".
-           05 FILLER                       PIC X(11)
-                                                   VALUE "PRODUTO".
-           05 FILLER                       PIC X(11)
-                                                   VALUE "QUANTIDADE".
-           05 FILLER                       PIC X(09)
-                                                   VALUE SPACES.
-       01  WS-CABEC5.
-           05 FILLER                       PIC X(09)
-                                                   VALUE SPACES.
-           05 FILLER                       PIC X(10)
-                                                   VALUE ALL "-".
-           05 FILLER                       PIC X(04)
-                                                   VALUE SPACES.
-           05 FILLER                       PIC X(10)
-                                                   VALUE ALL "-".
-           05 FILLER                       PIC X(04)
-                                                   VALUE SPACES.
-           05 FILLER                       PIC X(08)
-                                                   VALUE ALL "-".
-           05 FILLER                       PIC X(04)
-                                                   VALUE SPACES.
-           05 FILLER                       PIC X(07)
-                                                   VALUE ALL "-".
-           05 FILLER                       PIC X(04)
-                                                   VALUE SPACES.
-           05 FILLER                       PIC X(11)
-                                                   VALUE ALL "-".
-           05 FILLER                       PIC X(09)
-                                                   VALUE SPACES.
-       01  WS-LINDET.
-           05 FILLER                       PIC X(09)
-                                                   VALUE SPACES.
-           05 LD-NUMMOV                    PIC ZZ.ZZZ.ZZ9.
-
-           05 FILLER                       PIC X(04)
-                                                   VALUE SPACES.
-      *----RECEBE DATA FORMATADA
-           05 LD-DIA                       PIC 9(02).
-           05 FILLER                       PIC X(01) VALUE "/".
-           05 LD-MES                       PIC 9(02).
-           05 FILLER                       PIC X(01) VALUE "/".
-           05 LD-ANO                       PIC 9(04).
-
-           05 FILLER                       PIC X(04)
-                                                   VALUE SPACES.
-      *----RECEBE HORA FORMATADA
-           05 LD-HORA                      PIC 9(02).
-           05 FILLER                       PIC X(01) VALUE ":".
-           05 LD-MIN                       PIC 9(02).
-           05 FILLER                       PIC X(01) VALUE ":".
-           05 LD-SEG                       PIC 9(02).
-
-           05 FILLER                       PIC X(06)
-                                                   VALUE SPACES.
-           05 LD-CODPRODMOV                PIC 9(04).
-
-           05 FILLER                       PIC X(05)
-                                                   VALUE SPACES.
-           05 LD-QTDMOV                    PIC ZZ.ZZZ.ZZ9+.
-
-           05 FILLER                       PIC X(09)
-                                                   VALUE SPACES.
-       01  WS-RODAPE1                      PIC X(80)
-                                                   VALUE ALL "-".
-       01  WS-RODAPE2.
-           05 FILLER                       PIC X(43)
-                                                   VALUE
-                 "APOS O USO UTILIZE ESTE PAPEL COMO RASCUNHO".
-           05 FILLER                       PIC X(18)
-                                                   VALUE SPACES.
-           05 FILLER                       PIC X(37)
-                                                   VALUE
-                               "RECICLE SUAS IDEIAS".
-
-       77  WS-CTMOV                        PIC 9(05)
+      *VARIAVEIS CONTADORAS
+       77  WS-CTLIDOOLD                    PIC 9(02)
                                                    COMP.
-       77  WS-CTMOVIMP                     PIC 9(05)
+       77  WS-CTLIDOMOV                    PIC 9(02)
                                                    COMP.
-       77  WS-CTLINHA                      PIC 9(02)
+       77  WS-CTGRAVNEW                    PIC 9(02)
                                                    COMP.
-       77  WS-CTPAGINA                     PIC 9(05)
+       77  WS-CTCADINV                     PIC 9(02)
                                                    COMP.
-
+       77  WS-CTMOVINV                     PIC 9(02)
+                                                   COMP.
+       77  WS-CTALT                        PIC 9(02)
+                                                   COMP.
+       77  WS-CTEXC                        PIC 9(02)
+                                                   COMP.
+       77  WS-CTINC                        PIC 9(02)
+                                                   COMP.
       *VARIAVEIS CONTADORAS FORMATADAS
-       77  WS-CTMOV-F                      PIC ZZ.ZZ9.
-       77  WS-CTPAGINA-F                   PIC ZZ.ZZ9.
-       77  WS-CTMOVIMP-F                   PIC ZZ.ZZ9.
-
-      *VARIAVEIS DE MENSAGEM DE ERRO
-       77  WS-MSG-ERRO-OPEN-E              PIC X(40)
-                                                   VALUE
-                            "ERRO DE ABERTURA DO ARQUIVO NO ESTOQUE".
-       77  WS-MSG-ERRO-OPEN-R              PIC X(40)
-                                                   VALUE
-                            "ERRO DE ABERTURA DO ARQUIVO NO RELATORIO".
-       77  WS-MSG-ERRO-CLOSE               PIC X(40)
-                                                   VALUE
-                            "ERRO DE FECHAMENTO DO ARQUIVO OLD".
-       77  WS-MSG-ERRO-WRITE               PIC X(40)
-                                                   VALUE
-                            "ERRO DE GRAVACAO DO ARQUIVO".
-       77  WS-MSG-ERRO-READ                PIC X(40)
-                                                   VALUE
-                                  "ERRO DE LEITURA DO ARQUIVO".
-       77  WS-MSG-ERRO-ADD                 PIC X(40)
-                                                   VALUE
-                                   "ERRO DE TAMANHO DA VARIAVEL".
-       77  WS-MSG-ERRO-VAZIO               PIC X(40)
-                                                   VALUE
-                                   "ERRO DE ARQUIVO VAZIO".
+       77  WS-CTLIDOOLD-F                  PIC ZZ9.
+       77  WS-CTLIDOMOV-F                  PIC ZZ9.
+       77  WS-CTGRAVNEW-F                  PIC ZZ9.
+       77  WS-CTCADINV-F                   PIC ZZ9.
+       77  WS-CTMOVINV-F                   PIC ZZ9.
+       77  WS-CTALT-F                      PIC ZZ9.
+       77  WS-CTEXC-F                      PIC ZZ9.
+       77  WS-CTINC-F                      PIC ZZ9.
 
       *VARIAVEIS DE FILE STATUS E FLAGS
-       01  FS-MOVEST                       PIC X(02).
-              88 SUCESSO-E                         VALUE "00".
-              88 FIM-ARQUIVO-E                     VALUE "10".
-       01  FS-RELMOV01                     PIC X(02).
-              88 SUCESSO-R                         VALUE "00".
-              88 FIM-ARQUIVO-R                     VALUE "10".
+       01  FS-CLIOLD                       PIC X(02).
+              88 SUCESSO-O                         VALUE "00".
+              88 FIM-ARQUIVO-O                     VALUE "10".
+       01  FS-CLIMOV                       PIC X(02).
+              88 SUCESSO-M                         VALUE "00".
+              88 FIM-ARQUIVO-M                     VALUE "10".
+       01  FS-CLINEW                       PIC X(02).
+              88 SUCESSO-N                         VALUE "00".
+              88 FIM-ARQUIVO-N                     VALUE "10".
        77  WS-FS                           PIC X(02).
 
       *VARIAVEIS DE MENSAGEM DE ERRO
        77  WS-MSG                          PIC X(60).
+       77  WS-MSG-ERRO-OPEN-O              PIC X(40)
+                                                   VALUE
+           "ERRO DE ABERTURA DO ARQUIVO OPEN".
+       77  WS-MSG-ERRO-OPEN-M              PIC X(40)
+                                                   VALUE
+           "ERRO DE ABERTURA DO ARQUIVO MOV".
+       77  WS-MSG-ERRO-OPEN-N              PIC X(40)
+                                                   VALUE
+           "ERRO DE ABERTURA DO ARQUIVO NEW".
+       77  WS-MSG-ERRO-CLOSE-O             PIC X(40)
+                                                   VALUE
+           "ERRO DE FECHAMENTO DO ARQUIVO OLD".
+       77  WS-MSG-ERRO-CLOSE-M             PIC X(40)
+                                                   VALUE
+           "ERRO DE FECHAMENTO DO ARQUIVO MOV".
+       77  WS-MSG-ERRO-CLOSE-N             PIC X(40)
+                                                   VALUE
+           "ERRO DE FECHAMENTO DO ARQUIVO NEW".
+       77  WS-MSG-ERRO-WRITE               PIC X(40)
+                                                   VALUE
+           "ERRO DE GRAVACAO DO ARQUIVO".
+       77  WS-MSG-ERRO-READ-O              PIC X(40)
+                                                   VALUE
+           "ERRO DE LEITURA DO ARQUIVO OLD".
+       77  WS-MSG-ERRO-READ-M              PIC X(40)
+                                                   VALUE
+           "ERRO DE LEITURA DO ARQUIVO MOV".
+       77  WS-MSG-ERRO-READ-N              PIC X(40)
+                                                   VALUE
+           "ERRO DE LEITURA DO ARQUIVO NEW".
+       77  WS-MSG-ERRO-CALL                PIC X(40)
+                                                   VALUE
+           "ERRO NA CHAMADA DO SUBPROGRAMA".
+       77  WS-MSG-ERRO-ADD                 PIC X(40)
+                                                   VALUE
+           "ERRO DE TAMANHO DA VARIAVEL".
+       77  WS-MSG-ERRO-VAZIO               PIC X(40)
+                                                   VALUE
+           "ERRO DE ARQUIVO VAZIO".
 
-       77  WS-PULA                         PIC 9(02).
+      *NOME DO SUBPROGRAMA QUE VALIDA O CPF
+       77  WS-NOME-PGM                     PIC X(08)
+                                                   VALUE "PGMAUX02".
+
+       77  WS-ASTERISCO                    PIC X(50)
+                                                   VALUE ALL "*".
+       77  WS-IGUAL                        PIC X(50)
+                                                   VALUE ALL "=".
+       77  WS-MSG-CLIMOVINV                PIC X(50)
+                                                   VALUE
+           "*         CLIENTE COM MOVIMENTO INVALIDO         *".
+       01  WS-DADOS-ENVIADOS.
+              05 WS-TOTALDIVIDA            PIC 9(08)V99.
+              05 WS-RESP                   PIC X(01).
+                    88 SUCESSO-RESPOSTA            VALUE "0".
+              05 WS-DIVIDACALC             PIC 9(08)V99.
 
        LINKAGE                             SECTION.
-      *
+      *----------------------------------------------------------------*
+      *ESTA SESSAO FICARA VAZIA POIS NAO RECEBE VARIAVEIS EXTERNAS
       *----------------------------------------------------------------*
        PROCEDURE                           DIVISION.
       *----------------------------------------------------------------*
-       0000-GPAZ9907.
+      *ETAPA 3: MANIPULACAO DOS ARQ DE ENTRADA E SAIDA
+       0000-GPAZ9906.
            PERFORM 1000-INICIALIZAR
-           PERFORM 2000-PROCESSAR UNTIL FIM-ARQUIVO-E
+           PERFORM 2000-PROCESSAR UNTIL
+                               FIM-ARQUIVO-O  AND
+                               FIM-ARQUIVO-M
            PERFORM 3000-TERMINO
            STOP RUN
            .
+
        1000-INICIALIZAR.
            ACCEPT WS-HORARIO-INICIAL FROM TIME
-           ACCEPT WS-DATA-CABEC FROM DATE
-           ACCEPT WS-HORA-CABEC FROM TIME
 
-           MOVE 0                          TO WS-CTMOV
-                                              WS-CTPAGINA
-                                              WS-CTMOVIMP
-           MOVE 99                         TO WS-CTLINHA
-
-           OPEN INPUT MOVEST
-           IF NOT SUCESSO-E
-              MOVE WS-MSG-ERRO-OPEN-E      TO WS-MSG
-              MOVE FS-MOVEST               TO WS-FS
+      *----ZERANDO VARIAVEIS CONTADORAS
+           MOVE 0                          TO WS-CTLIDOOLD
+                                              WS-CTLIDOMOV
+                                              WS-CTGRAVNEW
+                                              WS-CTMOVINV
+                                              WS-CTCADINV
+                                              WS-CTALT
+                                              WS-CTEXC
+                                              WS-CTINC
+      *----ABERTURA DO ARQ CLISP PARA LEITURA
+           OPEN INPUT CLIOLD
+           IF NOT SUCESSO-O
+              MOVE WS-MSG-ERRO-OPEN-O      TO WS-MSG
+              MOVE FS-CLIOLD               TO WS-FS
               GO                           TO 9999-ERRO
            END-IF
 
-           PERFORM 1100-LER-MOVEST
-           IF FIM-ARQUIVO-E
+      *----ABERTURA DO ARQ CLIRJ PARA LEITURA
+           OPEN INPUT CLIMOV
+           IF NOT SUCESSO-M
+              MOVE WS-MSG-ERRO-OPEN-M      TO WS-MSG
+              MOVE FS-CLIMOV               TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+
+      *----ABERTURA DO ARQ CLIUNIF PARA LEITURA
+           OPEN OUTPUT CLINEW
+           IF NOT SUCESSO-N
+              MOVE WS-MSG-ERRO-OPEN-N      TO WS-MSG
+              MOVE FS-CLINEW               TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+
+           PERFORM 1100-LER-CLIOLD
+           IF FIM-ARQUIVO-O
               MOVE WS-MSG-ERRO-VAZIO       TO WS-MSG
-              MOVE FS-MOVEST               TO WS-FS
+              MOVE FS-CLIOLD               TO WS-FS
               GO                           TO 9999-ERRO
            END-IF
 
-           OPEN OUTPUT RELMOV01
-           IF NOT SUCESSO-R
-              MOVE WS-MSG-ERRO-OPEN-R      TO WS-MSG
-              MOVE FS-RELMOV01             TO WS-FS
+           PERFORM 1200-LER-CLIMOV
+           IF FIM-ARQUIVO-M
+              MOVE WS-MSG-ERRO-VAZIO       TO WS-MSG
+              MOVE FS-CLIMOV               TO WS-FS
               GO                           TO 9999-ERRO
            END-IF
            .
 
-       1100-LER-MOVEST.
-           READ MOVEST INTO WS-REG-MOVEST
-           IF NOT SUCESSO-E
-              ADD 1                        TO WS-CTMOV
+       1100-LER-CLIOLD.
+           READ CLIOLD INTO WS-REG-CLI-OLD
+           IF SUCESSO-O
+              ADD 1                        TO WS-CTLIDOOLD
                   ON SIZE ERROR
                      DISPLAY WS-MSG-ERRO-ADD
               END-ADD
            ELSE
-              IF FIM-ARQUIVO-E
-                 MOVE WS-MSG-ERRO-READ     TO WS-MSG
-                 MOVE FS-MOVEST            TO WS-FS
+              IF FIM-ARQUIVO-O
+                 MOVE HIGH-VALUES          TO WS-CODCLI-OLD
+              ELSE
+                 MOVE WS-MSG-ERRO-READ-O   TO WS-MSG
+                 MOVE FS-CLIOLD            TO WS-FS
                  GO                        TO 9999-ERRO
               END-IF
            END-IF
            .
-       2000-PROCESSAR.
-           IF WS-CTLINHA > 49
-              PERFORM 2100-IMPRIME-CABECALHO
-           END-IF
 
-           PERFORM 2200-IMPRIME-DETALHE
-           IF WS-CTLINHA = 48
-              PERFORM 2300-IMPRIME-RODAPE
-           END-IF
-
-           PERFORM 1100-LER-MOVEST
-           .
-
-       2100-IMPRIME-CABECALHO.
-           MOVE WS-ANO-C                   TO WS-ANO-C-F
-           MOVE WS-MES-C                   TO WS-MES-C-F
-           MOVE WS-DIA-C                   TO WS-DIA-C-F
-
-           MOVE WS-DATA-CABEC-F            TO WS-DATA-CABEC1
-
-           MOVE WS-HORA-C                  TO WS-HORA-C-F
-           MOVE WS-MIN-C                   TO WS-MIN-C-F
-           MOVE WS-SEG-C                   TO WS-SEG-C-F
-
-           MOVE WS-HORA-CABEC-F            TO WS-HORA-CABEC1
-
-           ADD 1                           TO WS-CTPAGINA
-               ON SIZE ERROR
-                  DISPLAY WS-MSG-ERRO-ADD
-           END-ADD
-
-           MOVE WS-CTPAGINA                TO WS-PAG-CABEC2
-
-           WRITE REG-RELMOV01 FROM WS-CABEC1 AFTER PAGE
-           IF NOT SUCESSO-R
-              MOVE WS-MSG-ERRO-WRITE       TO WS-MSG
-              MOVE FS-RELMOV01             TO WS-FS
-              GO                           TO 9999-ERRO
-           END-IF
-
-           WRITE REG-RELMOV01 FROM WS-CABEC2
-           IF NOT SUCESSO-R
-              MOVE WS-MSG-ERRO-WRITE       TO WS-MSG
-              MOVE FS-RELMOV01              TO WS-FS
-              GO                           TO 9999-ERRO
-           END-IF
-
-           WRITE REG-RELMOV01 FROM WS-CABEC3
-           IF NOT SUCESSO-R
-              MOVE WS-MSG-ERRO-WRITE       TO WS-MSG
-              MOVE FS-RELMOV01              TO WS-FS
-              GO                           TO 9999-ERRO
-           END-IF
-
-           WRITE REG-RELMOV01 FROM WS-CABEC4
-           IF NOT SUCESSO-R
-              MOVE WS-MSG-ERRO-WRITE       TO WS-MSG
-              MOVE FS-RELMOV01              TO WS-FS
-              GO                           TO 9999-ERRO
-           END-IF
-
-           WRITE REG-RELMOV01 FROM WS-CABEC5
-           IF NOT SUCESSO-R
-              MOVE WS-MSG-ERRO-WRITE       TO WS-MSG
-              MOVE FS-RELMOV01              TO WS-FS
-              GO                           TO 9999-ERRO
-           END-IF
-
-           MOVE 5                          TO WS-CTLINHA
-           .
-
-       2200-IMPRIME-DETALHE.
-           MOVE WS-NUMMOV                  TO LD-NUMMOV
-           MOVE WS-DATAMOV(01:04)          TO LD-ANO
-           MOVE WS-DATAMOV(05:02)          TO LD-MES
-           MOVE WS-DATAMOV(07:02)          TO LD-DIA
-           MOVE WS-HORAMOV(01:02)          TO LD-HORA
-           MOVE WS-HORAMOV(03:02)          TO LD-MIN
-           MOVE WS-HORAMOV(05:02)          TO LD-SEG
-           MOVE WS-CODPRODMOV              TO LD-CODPRODMOV
-
-           IF WS-TIPOMOV = "E"
-              MOVE WS-QTDMOV               TO LD-QTDMOV
+       1200-LER-CLIMOV.
+           READ CLIMOV INTO WS-REG-CLI-MOV
+           IF SUCESSO-M
+              ADD 1                        TO WS-CTLIDOMOV
+                  ON SIZE ERROR
+                     DISPLAY WS-MSG-ERRO-ADD
+              END-ADD
            ELSE
-              MULTIPLY WS-QTDMOV BY -1 GIVING LD-QTDMOV
+              IF FIM-ARQUIVO-M
+                 MOVE HIGH-VALUES          TO WS-CODCLI-MOV
+              ELSE
+                 MOVE WS-MSG-ERRO-READ-M   TO WS-MSG
+                 MOVE FS-CLIMOV            TO WS-FS
+                 GO                        TO 9999-ERRO
+              END-IF
            END-IF
-
-           WRITE REG-RELMOV01 FROM WS-LINDET
-           IF NOT SUCESSO-R
-              MOVE WS-MSG-ERRO-WRITE       TO WS-MSG
-              MOVE FS-RELMOV01             TO WS-FS
-              GO                           TO 9999-ERRO
-           END-IF
-
-           ADD 1                           TO WS-CTLINHA
-               ON SIZE ERROR
-                  DISPLAY WS-MSG-ERRO-ADD
-           END-ADD
-
-           ADD 1                           TO WS-CTMOVIMP
-               ON SIZE ERROR
-                  DISPLAY WS-MSG-ERRO-ADD
-           END-ADD
            .
-       2300-IMPRIME-RODAPE.
-           COMPUTE WS-PULA = 48 - WS-CTLINHA
 
-           WRITE REG-RELMOV01 FROM WS-RODAPE1 AFTER WS-PULA LINES
-           IF NOT SUCESSO-R
+       2000-PROCESSAR.
+           IF WS-CODCLI-OLD < WS-CODCLI-MOV
+              ADD 1                        TO WS-CTCADINV
+              PERFORM 1100-LER-CLIOLD
+
+           ELSE
+              IF WS-CODCLI-OLD > WS-CODCLI-MOV
+                 PERFORM 2100-INCLUIR
+                 PERFORM 1200-LER-CLIMOV
+              ELSE
+                 PERFORM 2200-ALT-EXC
+                 PERFORM 1100-LER-CLIOLD
+                 PERFORM 1200-LER-CLIMOV
+              END-IF
+           END-IF
+           .
+
+       2100-INCLUIR.
+           IF INCLUIR
+              PERFORM 2400-GRAVA-M
+              ADD 1                        TO WS-CTINC
+                  ON SIZE ERROR
+                     DISPLAY WS-MSG-ERRO-ADD
+              END-ADD
+           ELSE
+              ADD 1                        TO WS-CTMOVINV
+                  ON SIZE ERROR
+                     DISPLAY WS-MSG-ERRO-ADD
+              END-ADD
+
+              MOVE WS-CODCLI-MOV           TO WS-CODCLI-M-F
+              MOVE WS-NOMECLI-MOV          TO WS-NOMECLI-M-F
+              MOVE WS-ENDCLI-MOV           TO WS-ENDCLI-M-F
+              MOVE WS-FONECLI-MOV(01:02)   TO WS-FONECLI1-M-F
+              MOVE WS-FONECLI-MOV(03:04)   TO WS-FONECLI2-M-F
+              MOVE WS-FONECLI-MOV(07:04)   TO WS-FONECLI3-M-F
+              MOVE WS-TOTALDIVIDA-MOV      TO WS-TOTALDIVIDA-M-F
+
+              DISPLAY WS-ASTERISCO
+              DISPLAY WS-MSG-CLIMOVINV
+              DISPLAY WS-ASTERISCO
+              DISPLAY "CODIGO DO CLIENTE: " WS-CODCLI-M-F
+                      "                          *"
+              DISPLAY "NOME.............: " WS-NOMECLI-M-F "     *"
+              DISPLAY "ENDERECO.........: " WS-ENDCLI-M-F "*"
+              DISPLAY "TELEFONE.........: " WS-FONECLI-M-F
+                      "                 *"
+              DISPLAY "TOTAL DA DIVIDA..: " WS-TOTALDIVIDA-M-F
+                      "                 *"
+              DISPLAY WS-ASTERISCO
+           END-IF
+           .
+
+       2200-ALT-EXC.
+           IF ALTERAR
+              PERFORM 2300-ALTERAR
+           ELSE
+              IF EXCLUIR
+                 ADD 1                     TO WS-CTEXC
+                     ON SIZE ERROR
+                        DISPLAY WS-MSG-ERRO-ADD
+                 END-ADD
+              ELSE
+                 ADD 1                     TO WS-CTMOVINV
+                     ON SIZE ERROR
+                        DISPLAY WS-MSG-ERRO-ADD
+                 END-ADD
+
+                 MOVE WS-CODCLI-MOV        TO WS-CODCLI-M-F
+                 MOVE WS-NOMECLI-MOV       TO WS-NOMECLI-M-F
+                 MOVE WS-ENDCLI-MOV        TO WS-ENDCLI-M-F
+                 MOVE WS-FONECLI-MOV(01:02)TO WS-FONECLI1-M-F
+                 MOVE WS-FONECLI-MOV(03:04)TO WS-FONECLI2-M-F
+                 MOVE WS-FONECLI-MOV(07:04)TO WS-FONECLI3-M-F
+                 MOVE WS-TOTALDIVIDA-MOV   TO WS-TOTALDIVIDA-M-F
+
+                 DISPLAY WS-ASTERISCO
+                 DISPLAY WS-MSG-CLIMOVINV
+                 DISPLAY WS-ASTERISCO
+                 DISPLAY "CODIGO DO CLIENTE: " WS-CODCLI-M-F
+                         "                          *"
+                 DISPLAY "NOME.............: " WS-NOMECLI-M-F "     *"
+                 DISPLAY "ENDERECO.........: " WS-ENDCLI-M-F "*"
+                 DISPLAY "TELEFONE.........: " WS-FONECLI-M-F
+                         "                 *"
+                 DISPLAY "TOTAL DA DIVIDA..: " WS-TOTALDIVIDA-M-F
+                         "                 *"
+                 DISPLAY WS-ASTERISCO
+              END-IF
+           END-IF
+           .
+       2300-ALTERAR.
+           MOVE WS-TOTALDIVIDA-OLD         TO WS-TOTALDIVIDA
+           CALL WS-NOME-PGM USING WS-DADOS-ENVIADOS
+                ON EXCEPTION DISPLAY WS-MSG-ERRO-CALL
+           CANCEL WS-NOME-PGM
+           END-CALL
+
+           IF SUCESSO-RESPOSTA
+              MOVE WS-DIVIDACALC           TO WS-TOTALDIVIDA-MOV
+              ADD 1                        TO WS-CTALT
+                  ON SIZE ERROR
+                     DISPLAY WS-MSG-ERRO-ADD
+              END-ADD
+
+              PERFORM 2400-GRAVA-M
+              MOVE SPACES                  TO WS-RESP
+           ELSE
+              ADD 1                        TO WS-CTMOVINV
+                  ON SIZE ERROR
+                     DISPLAY WS-MSG-ERRO-ADD
+              END-ADD
+              ADD 1                        TO WS-CTCADINV
+                  ON SIZE ERROR
+                     DISPLAY WS-MSG-ERRO-ADD
+              END-ADD
+           END-IF
+           .
+       2400-GRAVA-M.
+           MOVE WS-CODCLI-MOV              TO WS-CODCLI-NEW
+
+           IF WS-NOMECLI-MOV NOT = SPACES
+              MOVE WS-NOMECLI-MOV          TO WS-NOMECLI-NEW
+           ELSE
+              MOVE WS-NOMECLI-OLD          TO WS-NOMECLI-NEW
+           END-IF
+
+           IF WS-ENDCLI-MOV NOT = SPACES
+              MOVE WS-ENDCLI-MOV           TO WS-ENDCLI-NEW
+           ELSE
+              MOVE WS-ENDCLI-OLD           TO WS-ENDCLI-NEW
+           END-IF
+
+           IF WS-FONECLI-MOV NOT = SPACES
+              MOVE WS-FONECLI-MOV          TO WS-FONECLI-NEW
+           ELSE
+              MOVE WS-FONECLI-OLD          TO WS-FONECLI-NEW
+           END-IF
+
+           IF WS-TOTALDIVIDA-MOV IS NUMERIC
+              MOVE WS-TOTALDIVIDA-MOV      TO WS-TOTALDIVIDA-NEW
+           ELSE
+              IF NOT SUCESSO-RESPOSTA
+                 MOVE WS-TOTALDIVIDA-MOV   TO WS-TOTALDIVIDA-NEW
+              END-IF
+           END-IF
+
+           WRITE REG-CLI-NEW FROM WS-REG-CLI-NEW
+           IF NOT SUCESSO-N
               MOVE WS-MSG-ERRO-WRITE       TO WS-MSG
-              MOVE FS-RELMOV01             TO WS-FS
+              MOVE FS-CLINEW               TO WS-FS
               GO                           TO 9999-ERRO
            END-IF
 
-           WRITE REG-RELMOV01 FROM WS-RODAPE2
-           IF NOT SUCESSO-R
-              MOVE WS-MSG-ERRO-WRITE       TO WS-MSG
-              MOVE FS-RELMOV01             TO WS-FS
-              GO                           TO 9999-ERRO
-           END-IF
-
-           MOVE 50                         TO WS-CTLINHA
+           ADD 1                           TO WS-CTGRAVNEW
+               ON SIZE ERROR
+                  DISPLAY WS-MSG-ERRO-ADD
+           END-ADD
            .
 
        3000-TERMINO.
            PERFORM 9000-IMPRIME-DATA
 
-           IF WS-CTLINHA < 50
-              PERFORM 2300-IMPRIME-RODAPE
-           END-IF
-
-           CLOSE MOVEST
-           IF NOT SUCESSO-E
-              MOVE WS-MSG-ERRO-CLOSE       TO WS-MSG
-              MOVE FS-RELMOV01             TO WS-FS
+      *----FECHA ARQ CLIOLD
+           CLOSE CLIOLD
+           IF NOT SUCESSO-O
+              MOVE WS-MSG-ERRO-CLOSE-O     TO WS-MSG
+              MOVE FS-CLIOLD               TO WS-FS
               GO                           TO 9999-ERRO
            END-IF
 
-           CLOSE RELMOV01
-           IF NOT SUCESSO-R
-              MOVE WS-MSG-ERRO-CLOSE       TO WS-MSG
-              MOVE FS-RELMOV01             TO WS-FS
+      *----FECHA ARQ CLIMOV
+           CLOSE CLIMOV
+           IF NOT SUCESSO-M
+              MOVE WS-MSG-ERRO-CLOSE-M     TO WS-MSG
+              MOVE FS-CLIMOV               TO WS-FS
               GO                           TO 9999-ERRO
            END-IF
-      *HORA DO CABECALHO1
+
+      *----FECHA ARQ CLINEW
+           CLOSE CLINEW
+           IF NOT SUCESSO-N
+              MOVE WS-MSG-ERRO-CLOSE-N     TO WS-MSG
+              MOVE FS-CLINEW               TO WS-FS
+              GO                           TO 9999-ERRO
+           END-IF
+
            ACCEPT WS-HORARIO-FINAL FROM TIME
 
+      *----FAZ CALCULO DO TEMPO DE PROCESSAMENTO
            COPY CALCTEMP.
 
-           MOVE WS-CTMOV                   TO WS-CTMOV-F
-           MOVE WS-CTPAGINA                TO WS-CTPAGINA-F
-           MOVE WS-CTMOVIMP                TO WS-CTMOVIMP-F
+      *----MOVE VARIAVEIS CONTADORAS P/ AS FORMATADAS
+           MOVE WS-CTLIDOOLD               TO WS-CTLIDOOLD-F
+           MOVE WS-CTLIDOMOV               TO WS-CTLIDOMOV-F
+           MOVE WS-CTGRAVNEW               TO WS-CTGRAVNEW-F
+           MOVE WS-CTMOVINV                TO WS-CTMOVINV-F
+           MOVE WS-CTCADINV                TO WS-CTCADINV-F
+           MOVE WS-CTALT                   TO WS-CTALT-F
+           MOVE WS-CTEXC                   TO WS-CTEXC-F
+           MOVE WS-CTINC                   TO WS-CTINC-F
 
            DISPLAY "=================================================="
-           DISPLAY "             BOX COMPANY DO BRASIL                "
-           DISPLAY "=================================================="
-           DISPLAY " TOTAL DE MOVIMENTOS LIDO.................: "
-                     WS-CTMOV-F
-           DISPLAY " TOTAL DE PAGINAS IMPRESSAS...............: "
-                     WS-CTPAGINA-F
-           DISPLAY " TOTAL DE MOVIMENTOS IMPRESSOS............: "
-                     WS-CTMOVIMP-F
-           DISPLAY "=================================================="
-           DISPLAY " TEMPO TOTAL DE PROCESSAMENTO........: "
-                     WS-TEMPO-PROCESSAMENTO-F
-           DISPLAY "=================================================="
+           DISPLAY "TOTAL DE CADASTROS LIDOS EM CLIOLD..........:"
+                    WS-CTLIDOOLD-F
+           DISPLAY "TOTAL DE MOVIMENTOS LIDOS EM CLIMOV.........:"
+                    WS-CTLIDOMOV-F
+           DISPLAY "TOTAL DE CADASTROS GRAVADOS EM CLINEW.......:"
+                    WS-CTGRAVNEW-F
+           DISPLAY "TOTAL DE CADASTROS INCLUIDOS EM CLINEW......:"
+                    WS-CTINC-F
+           DISPLAY "TOTAL DE CADASTROS EXCLUIDOS EM CLIOLD......:"
+                    WS-CTEXC-F
+           DISPLAY "TOTAL DE CADASTROS ALTERADOS PARA CLINEW....:"
+                    WS-CTALT-F
+           DISPLAY "TOTAL DE CADASTROS INVALIDOS................:"
+                    WS-CTCADINV-F
+           DISPLAY "TOTAL DE MOVIMENTOS INVALIDOS...............:"
+                    WS-CTMOVINV-F
+           DISPLAY "TEMPO TOTAL DE PROCESSAMENTO.........:"
+                    WS-TEMPO-PROCESSAMENTO-F
 
-           DISPLAY "*------------------------------------------------*"
-           DISPLAY "*DEU CERTO!!!             )/_                    *"
-           DISPLAY "*                _.--..---'-,--O_                *"
-           DISPLAY "*           \|..'           ._O__)_              *"
-           DISPLAY "*    ,-.     _./  _  \..--( /                    *"
-           DISPLAY "*      `\.-''__.-' \ (     \_                    *"
-           DISPLAY "*        `'''       `\__   /\                    *"
-           DISPLAY "*                     /)                         *"
-           DISPLAY "*------------------------------------------------*"
-           DISPLAY "*           TERMINO NORMAL DO GPAZ9907           *"
-           DISPLAY "*------------------------------------------------*"
-
+           DISPLAY "=================================================="
            .
-      *----(9000-IMPRIME-DATA) DISPLAY COM AS DATAS
+
+      *----(9000-IMPRIME-DATA)MOSTRA DISPLAY COM AS DATAS
            COPY ROTDATA.
 
-      *----(9999-ERRO) DISPLAY COM MSG DE ERROS
+      *----(9999-ERRO) MOSTRA DISPLAY COM AS MSG DE ERROS
            COPY ROTERRO.
